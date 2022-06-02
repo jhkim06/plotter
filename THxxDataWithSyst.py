@@ -108,8 +108,23 @@ class THxxDataWithSyst(THxxData.THxxData):
             stat_up=self.central_thist.GetBinError(ibin+1)
            
             tot_unc=tot_syst_up*tot_syst_up+stat_up*stat_up
+            #tot_unc=tot_syst_up*tot_syst_up
             self.total_error_hists[up_down.up].SetBinContent(ibin+1,math.sqrt(tot_unc))
             self.total_error_hists[up_down.down].SetBinContent(ibin+1,math.sqrt(tot_unc))
+
+    def __add__(self, other):
+
+        sum_=copy.deepcopy(self)        
+        sum_.central_thist.Add(other.central_thist,1.)
+
+        for syst_name in self.syst_names :
+            for index, syst_postfix in enumerate(self.syst_names[syst_name]):
+                sum_.syst_raw_hists_map[syst_name][index].Add(other.syst_raw_hists_map[syst_name][index],1.) # TODO check how to handle if different systematics considered 
+
+        sum_.set_total_syst_hists()
+        sum_.set_total_error_hists()
+
+        return sum_
             
     def __truediv__(self, other):
         # operator overloading for ratio histogram with systematic info
@@ -136,15 +151,15 @@ class THxxDataWithSyst(THxxData.THxxData):
         self.central_thist.SetMarkerSize(0);
         self.central_thist.SetLineColor(rt.kBlack)
         
-        #self.central_thist.SetMinimum(0)
-        #self.central_thist.SetMaximum(2.)
+        self.central_thist.SetMinimum(0)
+        self.central_thist.SetMaximum(2.)
         
         total_syst_hist=self.central_thist.Clone("total_syst_hist")
         for ibin in range(total_syst_hist.GetNbinsX()):
             total_syst_hist.SetBinError(ibin+1, self.total_syst_hists[up_down.up].GetBinContent(ibin+1))
             
         total_syst_hist.Draw("p9E2 SAME")
-        total_syst_hist.SetMarkerStyle(24)
+        total_syst_hist.SetMarkerStyle(20)
         total_syst_hist.SetMarkerSize(0.5);
         total_syst_hist.SetFillStyle(1001)
         total_syst_hist.SetFillColorAlpha(rt.kBlack,0.5);
