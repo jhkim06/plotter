@@ -40,16 +40,45 @@ class MatplotlibDrawer:
         self.fig.savefig(self.output_name, format="pdf", dpi=300)
         
     # https://matplotlib.org/3.5.0/gallery/statistics/errorbars_and_boxes.html
-    def make_error_hatch_boxes(self, i_row, xdata, ydata, xerror, yerror,
-                        edgecolor='none', hatch_style='\\\\\\', alpha=0.5):
+    def draw_hatch_error(self, thxxdata, i_row, edgecolor='none', hatch_style='\\\\\\', alpha=0.5):
+        
+        x_bin_centers = thxxdata.get_bin_centers()
+        x_bin_width = thxxdata.get_bin_widths()
+        bin_contents = thxxdata.get_bin_contents()
+        # TODO add option to select specific systematic source
+        total_error = thxxdata.get_total_errors()
+        
+        xerror = np.array([x_bin_width/2., x_bin_width/2.])
+        yerror = np.array([total_error, total_error])
                      
         # Loop over data points; create box from errors at each point
         errorboxes = [Rectangle((x - xe[0], y - ye[0]), xe.sum(), ye.sum(), fill=False, facecolor=None,
                         edgecolor=edgecolor, hatch=hatch_style)
-                        for x, y, xe, ye in zip(xdata, ydata, xerror.T, yerror.T)]
+                        for x, y, xe, ye in zip(x_bin_centers, bin_contents, xerror.T, yerror.T)]
 
         # Create patch collection with specified colour/alpha
         pc = PatchCollection(errorboxes, match_original=True, hatch=hatch_style, linewidth=0)
+
+        # Add collection to axes
+        self.axes[i_row].add_collection(pc)
+        
+    def draw_box_error(self, thxxdata, i_row, face_color='red', edge_color='none', alpha=0.1):
+        
+        x_bin_centers = thxxdata.get_bin_centers()
+        x_bin_width = thxxdata.get_bin_widths()
+        bin_contents = thxxdata.get_bin_contents()
+        total_error = thxxdata.get_total_errors()
+        
+        xerror = np.array([x_bin_width/2., x_bin_width/2.])
+        yerror = np.array([total_error, total_error])
+                     
+        # Loop over data points; create box from errors at each point
+        errorboxes = [Rectangle((x - xe[0], y - ye[0]), xe.sum(), ye.sum())
+                        for x, y, xe, ye in zip(x_bin_centers, bin_contents, xerror.T, yerror.T)]
+
+        # Create patch collection with specified colour/alpha
+        pc = PatchCollection(errorboxes, facecolor=face_color, alpha=alpha,
+                             edgecolor=edge_color, linewidth=0.05)
 
         # Add collection to axes
         self.axes[i_row].add_collection(pc)
@@ -62,7 +91,7 @@ class MatplotlibDrawer:
         '''
         pass
 
-    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', err_use_hatch = False, normalisation = 1., show_label=True,
+    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., show_label=True,
                      y_range = None):
         
         if y_range is not None:
@@ -75,14 +104,8 @@ class MatplotlibDrawer:
         x_bin_centers = thxxdata.get_bin_centers()
         x_bin_width = thxxdata.get_bin_widths()
         bin_contents = thxxdata.get_bin_contents()
-        bin_total_error = thxxdata.get_total_errors()
-        
-        xerror = np.array([x_bin_width/2., x_bin_width/2.])
-        yerror = np.array([bin_total_error, bin_total_error])
         
         artists = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., fmt=fmt)
-        if err_use_hatch:
-            _ = self.make_error_hatch_boxes(i_row, x_bin_centers, bin_contents, xerror, yerror, edgecolor=artists[0].get_color())
             
     def draw_bar(self, thxxdata, i_row, normalisation = 1.):
         pass
