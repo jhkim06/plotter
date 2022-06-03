@@ -6,13 +6,13 @@ import copy
 
 from collections import defaultdict
 
+
 def make_clean_hist(original_hist, name):
 
-    new_hist=original_hist.Clone(name)
+    new_hist = original_hist.Clone(name)
     new_hist.Reset()
-    
     return new_hist
-    
+
 class up_down:
     up=0
     down=1
@@ -24,7 +24,7 @@ class THxxDataWithSyst(THxxData.THxxData):
     
         super().__init__(input_root_files, hist_name, hist_label_name) # set central histogram
         
-        self.syst_names=syst_names
+        self.syst_names = syst_names
         self.syst_raw_hists_map=defaultdict(list)
         
         self.syst_hists_map=defaultdict(list) # delta
@@ -54,6 +54,42 @@ class THxxDataWithSyst(THxxData.THxxData):
         self.set_total_syst_hists()
         # set total uncertatiny histograms
         self.set_total_error_hists()
+        
+    def get_total_errors(self, variation_direction=up_down.up):
+        
+        bin_errors = []
+        nbinsx = self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_errors.append(self.total_error_hists[variation_direction].GetBinContent(ibin+1))
+        
+        return np.array(bin_errors)
+        
+    def get_bin_contents(self):
+    
+        bin_contents = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_contents.append(self.central_thist.GetBinContent(ibin+1))
+        
+        return np.array(bin_contents)
+        
+    def get_bin_centers(self):
+        
+        bin_centers = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_centers.append(self.central_thist.GetXaxis().GetBinCenter(ibin+1))
+        
+        return np.array(bin_centers)
+        
+    def get_bin_widths(self):
+    
+        bin_widths = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_widths.append(self.central_thist.GetXaxis().GetBinWidth(ibin+1))
+        
+        return np.array(bin_widths)
 
     def set_total_syst_hists(self):
         
@@ -104,6 +140,7 @@ class THxxDataWithSyst(THxxData.THxxData):
         
         nbinsx=self.central_thist.GetNbinsX()
         for ibin in range(nbinsx):
+            
             tot_syst_up=self.total_syst_hists[up_down.up].GetBinContent(ibin+1)
             stat_up=self.central_thist.GetBinError(ibin+1)
            
@@ -111,7 +148,7 @@ class THxxDataWithSyst(THxxData.THxxData):
             #tot_unc=tot_syst_up*tot_syst_up
             self.total_error_hists[up_down.up].SetBinContent(ibin+1,math.sqrt(tot_unc))
             self.total_error_hists[up_down.down].SetBinContent(ibin+1,math.sqrt(tot_unc))
-
+            
     def __add__(self, other):
 
         sum_=copy.deepcopy(self)        
@@ -144,25 +181,33 @@ class THxxDataWithSyst(THxxData.THxxData):
     # test plot
     def make_plot(self,output_name="test_syst.pdf"):
         c1 = rt.TCanvas()
+        c1.SetLogx()
         print("make_plot in THxxDataWithSyst")
         
-        self.central_thist.Draw("HIST P9")
+        #self.central_thist.GetXaxis().SetRangeUser(0.1,100)
+        self.central_thist.Draw("HIST P9e")
         self.central_thist.SetMarkerStyle(24)
         self.central_thist.SetMarkerSize(0);
         self.central_thist.SetLineColor(rt.kBlack)
         
-        self.central_thist.SetMinimum(0)
-        self.central_thist.SetMaximum(2.)
+        self.central_thist.SetMinimum(0.5)
+        self.central_thist.SetMaximum(1.5)
         
         total_syst_hist=self.central_thist.Clone("total_syst_hist")
         for ibin in range(total_syst_hist.GetNbinsX()):
             total_syst_hist.SetBinError(ibin+1, self.total_syst_hists[up_down.up].GetBinContent(ibin+1))
-            
-        total_syst_hist.Draw("p9E2 SAME")
-        total_syst_hist.SetMarkerStyle(20)
-        total_syst_hist.SetMarkerSize(0.5);
-        total_syst_hist.SetFillStyle(1001)
-        total_syst_hist.SetFillColorAlpha(rt.kBlack,0.5);
+        
+        #total_syst_hist.Draw("p9E2 SAME")
+        #total_syst_hist.SetMarkerStyle(20)
+        #total_syst_hist.SetMarkerSize(0.5);
+        #total_syst_hist.SetFillStyle(1001)
+        #total_syst_hist.SetFillColorAlpha(rt.kBlack,0.5);
+        
+        self.central_thist.Draw("p9E2 SAME")
+        self.central_thist.SetMarkerStyle(20)
+        self.central_thist.SetMarkerSize(0.5);
+        self.central_thist.SetFillStyle(1001)
+        self.central_thist.SetFillColorAlpha(rt.kBlack,0.5);
         
         total_error_hist=self.central_thist.Clone("total_error_hist")
         for ibin in range(total_error_hist.GetNbinsX()):

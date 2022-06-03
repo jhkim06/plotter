@@ -3,7 +3,6 @@ import ROOT as rt
 class THxxData: # class RootHistData
     def __init__(self, input_root_files, hist_name, hist_label_name):
         
-        # get json file for systematics 
         self.hist_name=hist_name # histogram name to read 
         self.hist_label_name=hist_label_name # histogram label to write in output plot
         
