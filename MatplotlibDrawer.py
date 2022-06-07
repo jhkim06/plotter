@@ -20,15 +20,21 @@ class MatplotlibDrawer:
         plt.subplots_adjust(left=0.15, right=0.97, bottom=0.05, top=0.95, hspace=0.0)
         
         self.axes = []
+        self.labels_in_axes = []
+        self.hists_in_axes = []
+        
         if n_row > 1:
             for axe in axes:
                 self.axes.append(axe)
+                self.labels_in_axes.append([])
+                self.hists_in_axes.append([])
         else:
             self.axes.append(axes)
         
         '''
         note, axes can be matrix
-        list of (histogram handle, label)  per axes
+        list of (histogram handle, label) per axes
+        
         
         '''
         
@@ -93,7 +99,7 @@ class MatplotlibDrawer:
         '''
         pass
 
-    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., show_label=True,
+    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True,
                      y_range = None):
         
         if y_range is not None:
@@ -107,12 +113,16 @@ class MatplotlibDrawer:
         x_bin_width = thxxdata.get_bin_widths()
         bin_contents = thxxdata.get_bin_contents()
         
-        artists = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., fmt=fmt)
+        handle = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., fmt=fmt)
+        if set_labels:
+            self.hists_in_axes[i_row].append(handle)
+            self.labels_in_axes[i_row].append(thxxdata.get_label_name())
             
     #
-    def draw_stack(self, *thxxdatas, i_row, normalisation = 1.):
+    def draw_stack(self, *thxxdatas, i_row, set_labels = True, normalisation = 1.):
     
         stacks = 0
+        info_for_labels = []
         for index, thxxdata in enumerate(thxxdatas) :
             
             x_bin_centers = thxxdata.get_bin_centers()
@@ -121,6 +131,15 @@ class MatplotlibDrawer:
             
             handle = self.axes[i_row].bar(x_bin_centers, bin_contents, width = x_bin_width, bottom=stacks, alpha=0.7)
             stacks = stacks + bin_contents
+            info_for_labels.append((handle, thxxdata.get_label_name()))
+        
+        if set_labels:
+            for handle, label in reversed(info_for_labels):
+                self.hists_in_axes[i_row].append(handle)
+                self.labels_in_axes[i_row].append(label)
+            
+    def draw_labels(self, i_row) :
+        self.axes[i_row].legend(tuple(self.hists_in_axes[i_row]), tuple(self.labels_in_axes[i_row]))
 
     def draw_bar(self, thxxdata, i_row, normalisation = 1.):
         pass

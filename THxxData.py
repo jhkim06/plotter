@@ -30,6 +30,12 @@ class THxxData: # class RootHistData
             
             first_file=False
             temp_file.Close()
+
+    def set_label_name(self, name):
+        self.hist_label_name = name
+
+    def get_label_name(self):
+        return self.hist_label_name
             
     def print_input_sample_names(self):
         for sample_name in self.sample_names:
