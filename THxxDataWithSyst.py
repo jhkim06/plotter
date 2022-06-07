@@ -34,7 +34,7 @@ class THxxDataWithSyst(THxxData.THxxData):
         # open root file
         first_file=True
         for root_file in syst_input_root_files:
-            print(root_file)
+            #print(root_file)
             temp_file=rt.TFile.Open(root_file, "READ")
             
             # read systematic histograms

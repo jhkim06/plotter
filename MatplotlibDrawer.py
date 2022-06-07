@@ -28,6 +28,8 @@ class MatplotlibDrawer:
         
         '''
         note, axes can be matrix
+        list of (histogram handle, label)  per axes
+        
         '''
         
     def clear_axes(self, i_row):
@@ -107,5 +109,18 @@ class MatplotlibDrawer:
         
         artists = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., fmt=fmt)
             
+    #
+    def draw_stack(self, *thxxdatas, i_row, normalisation = 1.):
+    
+        stacks = 0
+        for index, thxxdata in enumerate(thxxdatas) :
+            
+            x_bin_centers = thxxdata.get_bin_centers()
+            x_bin_width = thxxdata.get_bin_widths()
+            bin_contents = thxxdata.get_bin_contents()
+            
+            handle = self.axes[i_row].bar(x_bin_centers, bin_contents, width = x_bin_width, bottom=stacks, alpha=0.7)
+            stacks = stacks + bin_contents
+
     def draw_bar(self, thxxdata, i_row, normalisation = 1.):
         pass
