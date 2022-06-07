@@ -23,6 +23,8 @@ class MatplotlibDrawer:
         self.labels_in_axes = []
         self.hists_in_axes = []
         
+        self.color_map = {}
+        
         if n_row > 1:
             for axe in axes:
                 self.axes.append(axe)
@@ -40,6 +42,8 @@ class MatplotlibDrawer:
         
     def clear_axes(self, i_row):
         self.axes[i_row].clear()
+        self.labels_in_axes[i_row].clear()
+        self.hists_in_axes[i_row].clear()
         
     def remove_xais_labels(self, i_row):
         self.axes[i_row].set_xticklabels([])
@@ -119,7 +123,7 @@ class MatplotlibDrawer:
             self.labels_in_axes[i_row].append(thxxdata.get_label_name())
             
     #
-    def draw_stack(self, *thxxdatas, i_row, set_labels = True, normalisation = 1.):
+    def draw_stack(self, *thxxdatas, i_row, set_labels = True, normalisation = 1., **color_map):
     
         stacks = 0
         info_for_labels = []
@@ -129,9 +133,12 @@ class MatplotlibDrawer:
             x_bin_width = thxxdata.get_bin_widths()
             bin_contents = thxxdata.get_bin_contents()
             
-            handle = self.axes[i_row].bar(x_bin_centers, bin_contents, width = x_bin_width, bottom=stacks, alpha=0.7)
+            label_name = thxxdata.get_label_name()
+            color = thxxdata.get_color()
+            
+            handle = self.axes[i_row].bar(x_bin_centers, bin_contents, width = x_bin_width, bottom=stacks, color = color, alpha=0.7)
             stacks = stacks + bin_contents
-            info_for_labels.append((handle, thxxdata.get_label_name()))
+            info_for_labels.append((handle, label_name))
         
         if set_labels:
             for handle, label in reversed(info_for_labels):

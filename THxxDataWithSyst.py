@@ -20,9 +20,9 @@ class up_down:
 class THxxDataWithSyst(THxxData.THxxData):
     #def __init__(self, *args, **kwargs):
     
-    def __init__(self, input_root_files, hist_name, hist_label_name, syst_input_root_files, syst_names):
+    def __init__(self, input_root_files, hist_name, hist_label_name, syst_input_root_files, syst_names, color='black'):
     
-        super().__init__(input_root_files, hist_name, hist_label_name) # set central histogram
+        super().__init__(input_root_files, hist_name, hist_label_name, color) # set central histogram
         
         self.syst_names = syst_names
         self.syst_raw_hists_map=defaultdict(list)
@@ -41,6 +41,7 @@ class THxxDataWithSyst(THxxData.THxxData):
             for syst_name in self.syst_names :
                 for index, syst_postfix in enumerate(self.syst_names[syst_name]):
                     temp_thist=temp_file.Get(hist_name+syst_name+syst_postfix)
+                    temp_thist.Sumw2()
                     temp_thist.SetDirectory(0)
                     if first_file:
                         self.syst_raw_hists_map[syst_name].append(temp_thist)

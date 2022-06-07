@@ -1,7 +1,7 @@
 import ROOT as rt
 
 class THxxData: # class RootHistData
-    def __init__(self, input_root_files, hist_name, hist_label_name):
+    def __init__(self, input_root_files, hist_name, hist_label_name, color):
         
         self.hist_name=hist_name # histogram name to read 
         self.hist_label_name=hist_label_name # histogram label to write in output plot
@@ -9,6 +9,7 @@ class THxxData: # class RootHistData
         self.sample_names=[]
         
         self.input_thists=[]
+        self.color = color
         
         # open root file
         first_file=True
@@ -18,6 +19,7 @@ class THxxData: # class RootHistData
             
             # read central histogram 
             temp_thist=temp_file.Get(self.hist_name)
+            temp_thist.Sumw2()
             temp_thist.SetDirectory(0)
             if first_file:
                 self.central_thist=temp_thist 
@@ -31,6 +33,10 @@ class THxxData: # class RootHistData
             first_file=False
             temp_file.Close()
 
+    def get_color(self) :
+    
+        return self.color
+        
     def set_label_name(self, name):
         self.hist_label_name = name
 
