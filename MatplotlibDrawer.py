@@ -28,17 +28,12 @@ class MatplotlibDrawer:
         if n_row > 1:
             for axe in axes:
                 self.axes.append(axe)
+                axe.tick_params(bottom=True, top=True, left=True, right=True, which='both', direction='in')
                 self.labels_in_axes.append([])
                 self.hists_in_axes.append([])
         else:
+            axes.tick_params(bottom=True, top=True, left=True, right=True, which='both', direction='in')
             self.axes.append(axes)
-        
-        '''
-        note, axes can be matrix
-        list of (histogram handle, label) per axes
-        
-        
-        '''
         
     def clear_axes(self, i_row):
         self.axes[i_row].clear()
@@ -50,6 +45,12 @@ class MatplotlibDrawer:
 
     def save_plot(self):
         self.fig.savefig(self.output_name, format="pdf", dpi=300)
+        
+    def set_y_range(self, i_row, y_min, y_max):
+        self.axes[i_row].set_ylim(y_min, y_max)
+        
+    def set_x_range(self, i_row, x_min, x_max):
+        self.axes[i_row].set_xlim(x_min, x_max)
         
     # https://matplotlib.org/3.5.0/gallery/statistics/errorbars_and_boxes.html
     def draw_hatch_error(self, thxxdata, i_row, edgecolor='none', hatch_style='\\\\\\', alpha=0.5):
@@ -103,11 +104,7 @@ class MatplotlibDrawer:
         '''
         pass
 
-    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True,
-                     y_range = None):
-        
-        if y_range is not None:
-            self.axes[i_row].set_ylim(y_range[0], y_range[1])
+    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True):
         
         if i_row >= self.n_row:
             print("Check number of row.")
@@ -123,7 +120,7 @@ class MatplotlibDrawer:
             self.labels_in_axes[i_row].append(thxxdata.get_label_name())
             
     #
-    def draw_stack(self, *thxxdatas, i_row, set_labels = True, normalisation = 1., **color_map):
+    def draw_stack(self, *thxxdatas, i_row, set_labels = True, normalisation = 1.):
     
         stacks = 0
         info_for_labels = []
