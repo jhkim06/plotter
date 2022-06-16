@@ -4,19 +4,10 @@ import math
 import THxxData
 import copy
 
+from helper import *
+
 from collections import defaultdict
 
-
-def make_clean_hist(original_hist, name):
-
-    new_hist = original_hist.Clone(name)
-    new_hist.Reset()
-    return new_hist
-
-class up_down:
-    up=0
-    down=1
-    
 class THxxDataWithSyst(THxxData.THxxData):
     #def __init__(self, *args, **kwargs):
     
@@ -65,33 +56,6 @@ class THxxDataWithSyst(THxxData.THxxData):
         
         return np.array(bin_errors)
         
-    def get_bin_contents(self):
-    
-        bin_contents = []
-        nbinsx=self.central_thist.GetNbinsX()
-        for ibin in range(nbinsx):
-            bin_contents.append(self.central_thist.GetBinContent(ibin+1))
-        
-        return np.array(bin_contents)
-        
-    def get_bin_centers(self):
-        
-        bin_centers = []
-        nbinsx=self.central_thist.GetNbinsX()
-        for ibin in range(nbinsx):
-            bin_centers.append(self.central_thist.GetXaxis().GetBinCenter(ibin+1))
-        
-        return np.array(bin_centers)
-        
-    def get_bin_widths(self):
-    
-        bin_widths = []
-        nbinsx=self.central_thist.GetNbinsX()
-        for ibin in range(nbinsx):
-            bin_widths.append(self.central_thist.GetXaxis().GetBinWidth(ibin+1))
-        
-        return np.array(bin_widths)
-
     def set_total_syst_hists(self):
         
         if len(self.total_syst_hists)!=0:

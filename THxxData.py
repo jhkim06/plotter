@@ -1,4 +1,10 @@
 import ROOT as rt
+import numpy as np
+import math
+import THxxData
+import copy
+
+from helper import *
 
 class THxxData: # class RootHistData
     def __init__(self, input_root_files, hist_name, hist_label_name, color):
@@ -10,6 +16,8 @@ class THxxData: # class RootHistData
         
         self.input_thists=[]
         self.color = color
+
+        self.stat_unc_hists=[]
         
         # open root file
         first_file=True
@@ -19,19 +27,22 @@ class THxxData: # class RootHistData
             
             # read central histogram 
             temp_thist=temp_file.Get(self.hist_name)
-            temp_thist.Sumw2()
-            temp_thist.SetDirectory(0)
-            if first_file:
-                self.central_thist=temp_thist 
-            else:
-                self.central_thist.Add(temp_thist,1)
-                
-            temp_thist_raw=temp_thist.Clone(sample_name)
-            temp_thist_raw.SetDirectory(0)
-            self.input_thists.append(temp_thist_raw)
+            if type(temp_thist) == rt.TH1D :
+                temp_thist.Sumw2()
+                temp_thist.SetDirectory(0)
+                if first_file:
+                    self.central_thist=temp_thist 
+                else:
+                    self.central_thist.Add(temp_thist,1)
+                    
+                temp_thist_raw=temp_thist.Clone(sample_name)
+                temp_thist_raw.SetDirectory(0)
+                self.input_thists.append(temp_thist_raw)
             
             first_file=False
             temp_file.Close()
+
+        self.set_stat_unc_hists()
 
     def get_color(self) :
     
@@ -46,6 +57,77 @@ class THxxData: # class RootHistData
     def print_input_sample_names(self):
         for sample_name in self.sample_names:
             print(sample_name)
+
+    def get_bin_centers(self):
+
+        bin_centers = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_centers.append(self.central_thist.GetXaxis().GetBinCenter(ibin+1))
+
+        return np.array(bin_centers)
+
+    def get_bin_contents(self):
+   
+        bin_contents = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_contents.append(self.central_thist.GetBinContent(ibin+1))
+    
+        return np.array(bin_contents)
+    
+    def get_bin_widths(self):
+   
+        bin_widths = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_widths.append(self.central_thist.GetXaxis().GetBinWidth(ibin+1))
+
+        return np.array(bin_widths)
+
+    def set_stat_unc_hists(self):
+
+        if len(self.stat_unc_hists)!=0:
+            self.stat_unc_hists.clear()
+
+        self.stat_unc_hists.append(make_clean_hist(self.central_thist, "total_unc_up"))
+        self.stat_unc_hists.append(make_clean_hist(self.central_thist, "total_unc_down"))
+
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+
+            stat_up=self.central_thist.GetBinError(ibin+1)
+
+            self.stat_unc_hists[up_down.up].SetBinContent(ibin+1, stat_up)
+            self.stat_unc_hists[up_down.down].SetBinContent(ibin+1, stat_up)
+
+    def get_stat_errors(self, variation_direction=up_down.up):
+
+        bin_errors = []
+        nbinsx = self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_errors.append(self.stat_unc_hists[variation_direction].GetBinContent(ibin+1))
+
+        return np.array(bin_errors)
+
+    def __truediv__(self, other):
+        # operator overloading for ratio histogram with systematic info
+        # return new THxxDataWithSyst object
+        ratio_=copy.deepcopy(self)
+        ratio_.central_thist.Divide(other.central_thist)
+
+        ratio_.set_stat_unc_hists()
+
+        return ratio_
+
+    def __add__(self, other):
+
+        sum_=copy.deepcopy(self)
+        sum_.central_thist.Add(other.central_thist,1.)
+
+        sum_.set_stat_unc_hists()
+
+        return sum_
             
     def make_plot(self, show_syst=False, output_name="test.pdf"):
         c1 = rt.TCanvas()
