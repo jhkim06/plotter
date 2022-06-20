@@ -7,7 +7,13 @@ import copy
 from helper import *
 
 class THxxData: # class RootHistData
-    def __init__(self, input_root_files, hist_name, hist_label_name, color):
+
+    '''
+    TUnfoldxxData
+    input: histogram using TUnfoldBinning 
+    
+    '''
+    def __init__(self, input_root_files, hist_name, hist_label_name, color, set_mean_value = False):
         
         self.hist_name=hist_name # histogram name to read 
         self.hist_label_name=hist_label_name # histogram label to write in output plot
@@ -27,7 +33,7 @@ class THxxData: # class RootHistData
             
             # read central histogram 
             temp_thist=temp_file.Get(self.hist_name)
-            if type(temp_thist) == rt.TH1D :
+            if type(temp_thist) == rt.TH1D : # check if histogram exist
                 temp_thist.Sumw2()
                 temp_thist.SetDirectory(0)
                 if first_file:
@@ -44,8 +50,17 @@ class THxxData: # class RootHistData
 
         self.set_stat_unc_hists()
 
-    def get_color(self) :
+    def divide_bin_width(self) :
     
+        self.central_thist.Scale(1., "width");
+        self.set_stat_unc_hists()
+
+    def normalize(self) :
+        
+        self.central_thist.Scale(1./self.central_thist.Integral())
+        self.set_stat_unc_hists()
+
+    def get_color(self) :
         return self.color
         
     def set_label_name(self, name):
@@ -57,6 +72,19 @@ class THxxData: # class RootHistData
     def print_input_sample_names(self):
         for sample_name in self.sample_names:
             print(sample_name)
+
+    def get_bin_edges(self):
+
+        bin_edges = []
+        nbinsx=self.central_thist.GetNbinsX()
+        for ibin in range(nbinsx):
+            bin_edges.append(self.central_thist.GetXaxis().GetBinLowEdge(ibin+1))
+
+        # last bin upper edge
+        bin_edges.append(bin_edges[-1] + self.central_thist.GetBinWidth(nbinsx))
+
+        return np.array(bin_edges)
+        
 
     def get_bin_centers(self):
 

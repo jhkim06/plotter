@@ -16,12 +16,14 @@ mpl.rcParams['hatch.linewidth'] = 0.5
 
 class MatplotlibDrawer:
 
-    def __init__(self, n_row=2, n_col=1, fig_size=(8,7), height_ratios=[1,0.3], output_name="test.pdf"):
+    def __init__(self, n_row=2, n_col=1, fig_size=(8,7), height_ratios=[1,0.3]):
         
-        self.output_name = output_name
         self.n_row = n_row
         self.n_col = n_col
-        self.fig, axes = plt.subplots(self.n_row, self.n_col, sharex=False, figsize=fig_size, gridspec_kw = {'height_ratios':height_ratios})
+        if self.n_row > 1 :
+            self.fig, axes = plt.subplots(self.n_row, self.n_col, sharex=False, figsize=fig_size, gridspec_kw = {'height_ratios':height_ratios})
+        else :
+            self.fig, axes = plt.subplots(self.n_row, self.n_col, sharex=False, figsize=fig_size)
         plt.tight_layout()
         plt.subplots_adjust(left=0.15, right=0.9, bottom=0.1, top=0.9, hspace=0.0)
         
@@ -40,11 +42,16 @@ class MatplotlibDrawer:
         else:
             axes.tick_params(bottom=True, top=True, left=True, right=True, which='both', direction='in')
             self.axes.append(axes)
+            self.labels_in_axes.append([])
+            self.hists_in_axes.append([])
         
     def clear_axes(self, i_row):
         self.axes[i_row].clear()
         self.labels_in_axes[i_row].clear()
         self.hists_in_axes[i_row].clear()
+
+    def set_log_yscale(self, i_row):
+        self.axes[i_row].set_yscale("log")
         
     def remove_xais_labels(self, i_row):
         self.axes[i_row].set_xticklabels([])
@@ -52,8 +59,8 @@ class MatplotlibDrawer:
     def remove_first_tick_yaxis(self, i_row):
         self.axes[i_row].yaxis.set_major_locator(MaxNLocator(prune='lower'))
 
-    def save_plot(self):
-        self.fig.savefig(self.output_name, format="pdf", dpi=300)
+    def save_plot(self, out_name = "test"):
+        self.fig.savefig(out_name, format="pdf", dpi=300)
         
     def set_y_range(self, i_row, y_min, y_max):
         self.axes[i_row].set_ylim(y_min, y_max)
@@ -114,13 +121,19 @@ class MatplotlibDrawer:
         # Add collection to axes
         self.axes[i_row].add_collection(pc)
     
-    def draw_hist(self, thxxdata, i_row, normalisation = 1.):
+    def draw_hist(self, thxxdata, i_row, color, label = "", normalisation = 1., set_labels=True):
 
-        '''
-        make error box
-        how to extract bin contents from THxx to numpy
-        '''
-        pass
+        if i_row >= self.n_row:
+            print("Check number of row.")
+            return
+        
+        x_bin_centers = thxxdata.get_bin_centers()
+        x_bin_edges = thxxdata.get_bin_edges()
+        bin_contents = thxxdata.get_bin_contents()
+        stat_unc = thxxdata.get_stat_errors()
+        
+        handle = self.axes[i_row].hist(x_bin_centers, bins = x_bin_edges, weights=bin_contents, color=color, histtype = "step", label = label)
+        self.axes[i_row].legend(loc='upper right')
 
     def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True, ms = 4.):
         
