@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, AutoMinorLocator, LogLocator, NullFormatter, LogFormatter)
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 
 from helper import *
 
@@ -39,25 +42,36 @@ class MatplotlibDrawer:
                 axe.tick_params(bottom=True, top=True, left=True, right=True, which='both', direction='in')
                 self.labels_in_axes.append([])
                 self.hists_in_axes.append([])
+
+                axe.tick_params(length=10, which='major')
+                axe.tick_params(length=5, which='minor')
         else:
             axes.tick_params(bottom=True, top=True, left=True, right=True, which='both', direction='in')
             self.axes.append(axes)
             self.labels_in_axes.append([])
             self.hists_in_axes.append([])
+
+    def get_axes(self, i_row):
+        return self.axes[i_row]
         
     def clear_axes(self, i_row):
         self.axes[i_row].clear()
         self.labels_in_axes[i_row].clear()
         self.hists_in_axes[i_row].clear()
 
+    def set_log_xscale(self, i_row):
+        self.axes[i_row].set_xscale("log")
+
     def set_log_yscale(self, i_row):
         self.axes[i_row].set_yscale("log")
+        self.axes[i_row].yaxis.set_major_locator(LogLocator(10, numticks=14))
+        self.axes[i_row].yaxis.set_minor_locator(LogLocator(10, subs=(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9), numticks=14))
         
     def remove_xais_labels(self, i_row):
         self.axes[i_row].set_xticklabels([])
 
-    def remove_first_tick_yaxis(self, i_row):
-        self.axes[i_row].yaxis.set_major_locator(MaxNLocator(prune='lower'))
+    def remove_first_tick_yaxis(self, i_row, prune='lower'):
+        self.axes[i_row].yaxis.set_major_locator(MaxNLocator(prune=prune))
 
     def save_plot(self, out_name = "test"):
         self.fig.savefig(out_name, format="pdf", dpi=300)
@@ -72,13 +86,13 @@ class MatplotlibDrawer:
         self.axes[i_row].set_ylabel(title, fontsize='xx-large', ha='right', y=1.0, labelpad=15)
 
     def write_xaxis_title(self, i_row, title):
-        self.axes[i_row].set_xlabel(title, fontsize='xx-large', ha='right', x=1.0, labelpad=15)
+        self.axes[i_row].set_xlabel(title, fontsize='xx-large', ha='right', x=1.0, labelpad=5)
 
     def write_text(self, i_row, x, y, text, ha = "left") :
         self.axes[i_row].text(x, y, text, fontsize='xx-large', transform=self.axes[i_row].transAxes, ha = ha)
         
     # https://matplotlib.org/3.5.0/gallery/statistics/errorbars_and_boxes.html
-    def draw_hatch_error(self, thxxdata, i_row, show_stat = True, edgecolor='none', hatch_style='\\\\\\', alpha=0.5):
+    def draw_hatch_error(self, thxxdata, i_row, edgecolor='none', hatch_style='\\\\\\', alpha=0.5):
         
         x_bin_centers = thxxdata.get_bin_centers()
         x_bin_width = thxxdata.get_bin_widths()
@@ -100,12 +114,15 @@ class MatplotlibDrawer:
         # Add collection to axes
         self.axes[i_row].add_collection(pc)
         
-    def draw_box_error(self, thxxdata, i_row, show_stat = True, face_color='red', edge_color='none', alpha=0.1):
+    def draw_box_error(self, thxxdata, i_row, face_color='red', edge_color='none', alpha=0.1, error_name="stat", label=""):
         
         x_bin_centers = thxxdata.get_bin_centers()
         x_bin_width = thxxdata.get_bin_widths()
         bin_contents = thxxdata.get_bin_contents()
-        total_error = thxxdata.get_stat_errors()
+        if error_name=="stat" :
+            total_error = thxxdata.get_stat_errors()
+        else :
+            total_error = thxxdata.get_total_errors()
         
         xerror = np.array([x_bin_width/2., x_bin_width/2.])
         yerror = np.array([total_error, total_error])
@@ -120,6 +137,11 @@ class MatplotlibDrawer:
 
         # Add collection to axes
         self.axes[i_row].add_collection(pc)
+
+        if label != "" :
+            patch=mpatches.Patch(facecolor=face_color, alpha=alpha, edgecolor=edge_color, linewidth=0.05, label=label)
+            self.hists_in_axes[i_row].append(patch)
+            self.labels_in_axes[i_row].append(label)
     
     def draw_hist(self, thxxdata, i_row, color, label = "", normalisation = 1., set_labels=True):
 
@@ -132,10 +154,13 @@ class MatplotlibDrawer:
         bin_contents = thxxdata.get_bin_contents()
         stat_unc = thxxdata.get_stat_errors()
         
-        handle = self.axes[i_row].hist(x_bin_centers, bins = x_bin_edges, weights=bin_contents, color=color, histtype = "step", label = label)
-        self.axes[i_row].legend(loc='upper right')
+        self.axes[i_row].hist(x_bin_centers, bins = x_bin_edges, weights=bin_contents, color=color, histtype = "step")
+        if set_labels:
+            legend_handle = mlines.Line2D([], [], color=color, label=label)
+            self.hists_in_axes[i_row].append(legend_handle)
+            self.labels_in_axes[i_row].append(label)
 
-    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True, ms = 4.):
+    def draw_errorbar(self, thxxdata, i_row, fmt = 'o', normalisation = 1., set_labels=True, ms = 4., **kwargs):
         
         if i_row >= self.n_row:
             print("Check number of row.")
@@ -146,7 +171,7 @@ class MatplotlibDrawer:
         bin_contents = thxxdata.get_bin_contents()
         stat_unc = thxxdata.get_stat_errors()
         
-        handle = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., yerr=stat_unc, fmt=fmt, ms = ms)
+        handle = self.axes[i_row].errorbar(x_bin_centers, bin_contents, xerr=x_bin_width/2., yerr=stat_unc, fmt=fmt, ms = ms, linewidth=0.5, **kwargs)
         if set_labels:
             self.hists_in_axes[i_row].append(handle)
             self.labels_in_axes[i_row].append(thxxdata.get_label_name())
@@ -174,8 +199,8 @@ class MatplotlibDrawer:
                 self.hists_in_axes[i_row].append(handle)
                 self.labels_in_axes[i_row].append(label)
             
-    def draw_labels(self, i_row) :
-        self.axes[i_row].legend(tuple(self.hists_in_axes[i_row]), tuple(self.labels_in_axes[i_row]))
+    def draw_labels(self, i_row, **kwargs) :
+        self.axes[i_row].legend(tuple(self.hists_in_axes[i_row]), tuple(self.labels_in_axes[i_row]), **kwargs)
 
     def draw_bar(self, thxxdata, i_row, normalisation = 1.):
         pass

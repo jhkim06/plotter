@@ -32,6 +32,11 @@ class THxxDataWithSyst(THxxData.THxxData):
             for syst_name in self.syst_names :
                 for index, syst_postfix in enumerate(self.syst_names[syst_name]):
                     temp_thist=temp_file.Get(hist_name+syst_name+syst_postfix)
+
+                    # if systematic hist not exist read nominal one
+                    if type(temp_thist) != rt.TH1D :
+                        temp_thist=temp_file.Get(hist_name) 
+
                     temp_thist.Sumw2()
                     temp_thist.SetDirectory(0)
                     if first_file:
@@ -133,6 +138,8 @@ class THxxDataWithSyst(THxxData.THxxData):
         # return new THxxDataWithSyst object
         ratio_=copy.deepcopy(self)
         ratio_.central_thist.Divide(other.central_thist)
+
+        ratio_.set_stat_unc_hists()
         
         for syst_name in self.syst_names :
             for index, syst_postfix in enumerate(self.syst_names[syst_name]):

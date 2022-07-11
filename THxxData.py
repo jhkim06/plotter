@@ -50,6 +50,16 @@ class THxxData: # class RootHistData
 
         self.set_stat_unc_hists()
 
+    def get_mean(self, x_start=0, x_end=0, reset_stat=False) :
+        if reset_stat :
+            temp_hist = self.central_thist.Clone("cloned_hist")
+            temp_hist.ResetStats()
+            if x_start == x_end :
+                return temp_hist.GetMean(), temp_hist.GetMeanError()
+        else :
+            if x_start == x_end :
+                return self.central_thist.GetMean(), self.central_thist.GetMeanError()
+
     def divide_bin_width(self) :
     
         self.central_thist.Scale(1., "width");
@@ -84,7 +94,6 @@ class THxxData: # class RootHistData
         bin_edges.append(bin_edges[-1] + self.central_thist.GetBinWidth(nbinsx))
 
         return np.array(bin_edges)
-        
 
     def get_bin_centers(self):
 
